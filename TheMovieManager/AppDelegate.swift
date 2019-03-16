@@ -40,5 +40,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Called when the application is about to terminate. Save data if appropriate. See also applicationDidEnterBackground:.
     }
     
+    func application(_ app: UIApplication, open url: URL, options: [UIApplicationOpenURLOptionsKey : Any] = [:]) -> Bool {
+        let components = URLComponents(url: url, resolvingAgainstBaseURL: true)
+        
+        if components?.scheme == "themovieManager" && components?.path == "authenticate" {
+            let loginVC = window?.rootViewController as? LoginViewController
+            TMDBClient.sessionId { (success, error) in
+                if success {
+                    loginVC?.handleRequestTokenRespons(success: success, error: error)
+                }
+            }
+        }
+        
+        return true
+    }
+
+    
 }
 

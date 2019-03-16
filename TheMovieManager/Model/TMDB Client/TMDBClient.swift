@@ -22,12 +22,16 @@ class TMDBClient {
         case getWatchlist
         case getRequestToken
         case login
+        case createSessionId
+        case webAuth
+        
         var stringValue: String {
             switch self {
-            case .getWatchlist: return Endpoints.base + "/account/\(Auth.accountId)/watchlist/movies" + Endpoints.apiKeyParam + "&session_id=\(Auth.sessionId)"            
-            case .getRequestToken: return Endpoints.base + "/authentication/token/new" + Endpoints.apiKeyParam
-            case .login: return Endpoints.base + "/authentication/token/validate_with_login" + Endpoints.apiKeyParam
-                
+                case .getWatchlist: return Endpoints.base + "/account/\(Auth.accountId)/watchlist/movies" + Endpoints.apiKeyParam + "&session_id=\(Auth.sessionId)"
+                case .getRequestToken: return Endpoints.base + "/authentication/token/new" + Endpoints.apiKeyParam
+                case .login: return Endpoints.base + "/authentication/token/validate_with_login" + Endpoints.apiKeyParam
+                case .createSessionId: return Endpoints.base + "/authentication/session/new" + Endpoints.apiKeyParam
+                case .webAuth: return  "https://www.themoviedb.org/authenticate" + Auth.requestToken + "?redirect_to=themovieManager:authenticate"
                 
             }
         }
@@ -40,10 +44,12 @@ class TMDBClient {
     // POST: LOGIN
     class func login(username: String, password: String, completion: @escaping(Bool, Error?)-> Void) {
         var request = URLRequest(url: Endpoints.login.url)
+        print("login url----\(request)")
         request.httpMethod = "POST"
         request.addValue("application/json", forHTTPHeaderField: "Content-Type")
         let body = LoginRequest(username: username, password: password, requestToken: Auth.requestToken)
         
+        print("body---\(body)")
         request.httpBody = try! JSONEncoder().encode(body)
         
         let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
@@ -54,7 +60,7 @@ class TMDBClient {
             
             do {
                 let decoder =  JSONDecoder()
-                let requestObject = try! decoder.decode(RequestTokenResponse.self, from: data)
+                let requestObject = try decoder.decode(RequestTokenResponse.self, from: data)
                 Auth.requestToken = requestObject.requestToken
                 completion(true, nil)
                 
@@ -65,6 +71,35 @@ class TMDBClient {
         task.resume()
     }
     
+    
+    class func sessionId (comletion: @escaping(Bool, Error?) -> Void){
+        
+        var request = URLRequest(url: Endpoints.createSessionId.url)
+        print(request)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = PostSession( requestToken : Auth.requestToken)
+        
+        request.httpBody = try! JSONEncoder().encode(body)
+        
+        print("sessionId----\(body)")
+        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+            guard let data = data else {
+                comletion(false, error?.localizedDescription as! Error)
+                return
+            }
+            do {
+                let decode = JSONDecoder()
+                let responseObject = try decode.decode(SessionResponse.self, from: data)
+                 Auth.sessionId = responseObject.sessionId
+                print("responseObject-------\(responseObject) \( Auth.sessionId)")
+                comletion(true, nil)
+            } catch {
+                comletion(false, error.localizedDescription as! Error)
+            }
+        }
+        task.resume()
+    }
     
     
     
