@@ -2,9 +2,7 @@
 //  LoginViewController.swift
 //  TheMovieManager
 //
-//  Created by Owen LaRosa on 8/13/18.
-//  Copyright © 2018 Udacity. All rights reserved.
-//
+ 
 
 import UIKit
 
@@ -32,6 +30,16 @@ class LoginViewController: UIViewController {
     func handleRequestTokenRespons(success: Bool, error: Error?){
         if success {
             print(TMDBClient.Auth.requestToken)
+        }
+    }
+    
+    
+    func handleLoginResponse (success: Bool, error: Error?) {
+        if success {
+            TMDBClient.login(
+                username: self.emailTextField.text ?? "",
+                password: self.passwordTextField.text ?? "",
+                completion: handleLoginResponse(success:error:))
         }
     }
 }
