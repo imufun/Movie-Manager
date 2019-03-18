@@ -48,6 +48,7 @@ class LoginViewController: UIViewController {
                     username: self.emailTextField.text ?? "",
                     password: self.passwordTextField.text ?? "",
                     completion: self.handleLoginResponse(success:error:))
+                 self.performSegue(withIdentifier: "completeLogin", sender: nil)
             }
         }
         print("\(self.emailTextField.text)\(self.passwordTextField.text)")
