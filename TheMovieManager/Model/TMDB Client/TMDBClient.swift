@@ -65,68 +65,63 @@ class TMDBClient {
         task.resume()
     }
     
+    class func taskForPOSTRequest<RequestType:Encodable, ResponseType: Decodable> (url: URL, responseType: ResponseType.Type, body: RequestType, completion: @escaping(ResponseType?, Error?)-> Void) {
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = try! JSONEncoder().encode(body)
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+            guard let data = data else {
+                DispatchQueue.main.async {
+                    completion(nil , error)
+                }
+                return
+            }
+             let decoder =  JSONDecoder()
+            do {
+                let requestObject = try decoder.decode(ResponseType.self, from: data)
+                DispatchQueue.main.async {
+                    completion(requestObject , nil)
+                }
+                
+            } catch {
+                DispatchQueue.main.async {
+                    completion(nil , error)
+                }
+            }
+        }
+         task.resume()
+    }
     
     
     
     
     // POST: LOGIN
     class func login(username: String, password: String, completion: @escaping(Bool, Error?)-> Void) {
-        var request = URLRequest(url: Endpoints.login.url)
-        print("login url----\(request)")
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = LoginRequest(username: username, password: password, requestToken: Auth.requestToken)
-        
-        print("body---\(body)")
-        request.httpBody = try! JSONEncoder().encode(body)
-        
-        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
-            guard let data = data else {
-                completion(false, error)
-                return
-            }
-            
-            do {
-                let decoder =  JSONDecoder()
-                let requestObject = try decoder.decode(RequestTokenResponse.self, from: data)
-                Auth.requestToken = requestObject.requestToken
+        let body = LoginRequest(username: username, password: password, requestToken:Auth.requestToken)
+        taskForPOSTRequest(url: Endpoints.login.url, responseType: RequestTokenResponse.self, body: body) { (response, error) in
+            if let response = response {
+                Auth.requestToken = response.requestToken
                 completion(true, nil)
-                
-            } catch {
-                completion(false, error)
+            } else {
+                completion(true, nil)
             }
+        
         }
-        task.resume()
     }
     
     
-    class func sessionId (comletion: @escaping(Bool, Error?) -> Void){
-        
-        var request = URLRequest(url: Endpoints.createSessionId.url)
-        print(request)
-        request.httpMethod = "POST"
-        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = PostSession( requestToken : Auth.requestToken)
-        
-        request.httpBody = try! JSONEncoder().encode(body)
-        
-        print("sessionId----\(body)")
-        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
-            guard let data = data else {
-                comletion(false, error?.localizedDescription as! Error)
-                return
-            }
-            do {
-                let decode = JSONDecoder()
-                let responseObject = try decode.decode(SessionResponse.self, from: data)
-                 Auth.sessionId = responseObject.sessionId
-                print("responseObject-------\(responseObject) \( Auth.sessionId)")
+    class func createSessionId (comletion: @escaping(Bool, Error?) -> Void){
+        let body = PostSession(requestToken: Auth.requestToken)
+        taskForPOSTRequest(url: Endpoints.createSessionId.url, responseType: SessionResponse.self, body: body) { (response, error) in
+            if let response = response {
+                Auth.sessionId = response.sessionId
                 comletion(true, nil)
-            } catch {
-                comletion(false, error.localizedDescription as! Error)
+            } else {
+                comletion(false, error)
             }
         }
-        task.resume()
     }
     
     

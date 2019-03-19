@@ -60,7 +60,7 @@ class LoginViewController: UIViewController {
         if success {
             print(TMDBClient.Auth.requestToken)
           //  TMDBClient.sessionId(comletion: handleSessionResponse(success:error:)) // not working need to fix
-            TMDBClient.sessionId { (success, error) in
+            TMDBClient.createSessionId { (success, error) in
                 if success {
                     print(" sessionId response------")
 
@@ -75,9 +75,9 @@ class LoginViewController: UIViewController {
     func handleSessionResponse(success: Bool, error: Error?) {
         print("next controller...")
         if success {
-            DispatchQueue.main.async {
+           
                 self.performSegue(withIdentifier: "completeLogin", sender: nil)
-            }
+            
         }else {
             print("user and pass dont match")
         }
